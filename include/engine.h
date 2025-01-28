@@ -11,11 +11,11 @@
 #include <opencv2/cudawarping.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "IEngine.h"
 #include "logger.h"
 #include "Int8Calibrator.h"
 #include "util/Util.h"
 #include "util/Stopwatch.h"
+#include "interfaces/IEngine.h"
 #include "macros.h"
 
 // Precision used for GPU inference
