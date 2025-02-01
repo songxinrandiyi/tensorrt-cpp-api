@@ -1,54 +1,93 @@
 #include "cmd_line_util.h"
 #include "yolov8.h"
+#include "object_tracking.h"
 #include <opencv2/cudaimgproc.hpp>
+#include <opencv2/opencv.hpp>
 
-// Runs object detection on video stream then displays annotated results.
 int main(int argc, char *argv[]) {
     YoloV8Config config;
     std::string onnxModelPath;
     std::string trtModelPath;
     std::string inputVideo;
+    std::string outputFileName;
 
-    // Parse the command line arguments
-    if (!parseArguments(argc, argv, config, onnxModelPath, trtModelPath, inputVideo)) {
+    // Parse command line arguments
+    if (!parseArguments(argc, argv, config, onnxModelPath, trtModelPath, inputVideo, outputFileName)) {
         return -1;
     }
 
-    // Create the YoloV8 engine
+    // Initialize YoloV8 object
     std::unique_ptr<YoloV8> yoloV8 = std::make_unique<YoloV8>(onnxModelPath, trtModelPath, config);
-
-    // Initialize the video stream
     cv::VideoCapture cap;
 
-    // Open video capture
     try {
-        cap.open(std::stoi(inputVideo));
+        cap.open(std::stoi(inputVideo));  // Try to open video from numeric index
     } catch (const std::exception &e) {
-        cap.open(inputVideo);
+        cap.open(inputVideo);  // Otherwise, open the video file
     }
 
-    if (!cap.isOpened())
+    if (!cap.isOpened()) {
         throw std::runtime_error("Unable to open video capture with input '" + inputVideo + "'");
+    }
+
+    // Check if outputFileName is non-empty for recording video
+    cv::VideoWriter writer;
+    if (!outputFileName.empty()) {
+        // Set up video output if outputFileName is provided
+        std::string outputVideo = "../outputs/" + outputFileName;  // Use the provided output file name
+
+        // Get the first frame to initialize VideoWriter
+        cv::Mat firstFrame;
+        cap >> firstFrame;
+        if (firstFrame.empty()) {
+            throw std::runtime_error("Unable to read first frame.");
+        }
+
+        int codec = cv::VideoWriter::fourcc('X', 'V', 'I', 'D');  // Define codec
+        double fps = cap.get(cv::CAP_PROP_FPS);
+        cv::Size frameSize(firstFrame.cols, firstFrame.rows);
+
+        writer.open(outputVideo, codec, fps, frameSize, true);
+        if (!writer.isOpened()) {
+            throw std::runtime_error("Could not open the output video file for writing.");
+        }
+    }
+
+    std::vector<KalmanTracker> trackers;
 
     while (true) {
-        // Grab frame
         cv::Mat img;
         cap >> img;
 
-        if (img.empty())
-            throw std::runtime_error("Unable to decode image from video stream.");
-
-        // Run inference
-        const auto objects = yoloV8->detectObjects(img);
-
-        // Draw the bounding boxes on the image
-        yoloV8->drawObjectLabels(img, objects);
-
-        // Display the results
-        cv::imshow("Object Detection", img);
-        if (cv::waitKey(1) >= 0)
+        if (img.empty() || cv::waitKey(1) >= 0) {
+            std::cout << "Exiting...\n";
             break;
+        }
+
+        const auto detections = yoloV8->detectObjects(img);
+
+        associateDetectionsWithTrackers(detections, trackers, 0.3f);
+
+        for (auto &tracker : trackers) {
+            cv::Rect2f predictedBox = tracker.predict();
+            drawObjects(img, predictedBox, tracker.getID(), tracker.getLabel(), 2);
+        }
+
+        // Save frame to video if outputFileName is not empty
+        if (!outputFileName.empty()) {
+            writer.write(img);  // Save the frame to the video file
+        }
+
+        cv::imshow("Object Detection and Tracking", img);
     }
+
+    // Ensure video is saved safely if recording was enabled
+    if (!outputFileName.empty()) {
+        writer.release();
+    }
+    cap.release();
+    cv::destroyAllWindows();
+    std::cout << "Video processing completed." << std::endl;
 
     return 0;
 }

@@ -23,6 +23,7 @@ find_package(TensorRT REQUIRED)
 find_package(CUDA REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(fmt REQUIRED)
+find_package(GTest REQUIRED)
 
 add_library(tensorrt_cpp_api SHARED
         src/engine.cpp)
@@ -34,5 +35,21 @@ target_link_libraries(tensorrt_cpp_api PUBLIC ${OpenCV_LIBS} ${CUDA_LIBRARIES} $
 add_library(YoloV8_TRT SHARED src/yolov8.cpp)
 target_link_libraries(YoloV8_TRT PUBLIC tensorrt_cpp_api)
 
+add_library(Tracking SHARED
+    src/kalman_tracker.cpp
+    src/object_tracking.cpp)
+
+target_include_directories(Tracking PUBLIC ${OpenCV_INCLUDE_DIRS} include)
+target_link_libraries(Tracking PUBLIC ${OpenCV_LIBS})
+
 add_executable(detect_object_video src/object_detection_video_stream.cpp)
-target_link_libraries(detect_object_video YoloV8_TRT)
+target_link_libraries(detect_object_video YoloV8_TRT Tracking)
+
+# Enable testing
+enable_testing()
+
+add_executable(test_kalman_tracker tests/test_kalman_tracker.cpp)
+target_link_libraries(test_kalman_tracker PUBLIC GTest::GTest GTest::Main Tracking)
+
+add_test(NAME KalmanTrackerTests COMMAND test_kalman_tracker)
+

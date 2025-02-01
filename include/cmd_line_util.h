@@ -1,5 +1,6 @@
 #pragma once
 #include "yolov8.h"
+#include "util/Util.h"
 #include <iostream>
 
 inline void showHelp(char *argv[]) {
@@ -89,6 +90,7 @@ inline bool parseArguments(
     std::string &onnxModelPath, 
     std::string &trtModelPath, 
     std::string &inputSource, 
+    std::string &outputFileName,
     bool isVideo = true
 ) {
     if (argc == 1) {
@@ -107,7 +109,7 @@ inline bool parseArguments(
                 if (!tryGetNextArgument(argc, argv, i, nextArgument, flag))
                     return false;
 
-                if (!doesFileExist(nextArgument)) {
+                if (!Util::doesFileExist(nextArgument)) {
                     std::cout << "Error: Unable to find model at path '" << nextArgument << "' for flag '" << flag << "'" << std::endl;
                     return false;
                 }
@@ -119,7 +121,7 @@ inline bool parseArguments(
                 if (!tryGetNextArgument(argc, argv, i, nextArgument, flag))
                     return false;
 
-                if (!doesFileExist(nextArgument)) {
+                if (!Util::doesFileExist(nextArgument)) {
                     std::cout << "Error: Unable to find TensorRT engine at path '" << nextArgument << "' for flag '" << flag << "'" << std::endl;
                     return false;
                 }
@@ -134,8 +136,21 @@ inline bool parseArguments(
                 inputSource = nextArgument;
 
                 // Optional check if input exists
-                if (!isVideo && !doesFileExist(nextArgument)) {
+                if (!isVideo && !Util::doesFileExist(nextArgument)) {
                     std::cout << "Error: Unable to find input source at path '" << nextArgument << "' for flag '" << flag << "'" << std::endl;
+                    return false;
+                }
+            }   
+
+            else if (flag == "output") {
+                if (!tryGetNextArgument(argc, argv, i, nextArgument, flag))
+                    return false;
+
+                outputFileName = nextArgument;
+
+                // Optional check if input exists
+                if (!Util::isValidMp4Filename(nextArgument)) {
+                    std::cout << "Invalid MP4 file name '" << nextArgument << "' for flag '" << flag << "'" << std::endl;
                     return false;
                 }
             }   
@@ -215,7 +230,7 @@ inline bool parseArguments(
                 if (!tryGetNextArgument(argc, argv, i, nextArgument, flag))
                     return false;
 
-                if (!doesFileExist(nextArgument)) {
+                if (!Util::doesFileExist(nextArgument)) {
                     std::cout << "Error: Calibration data at specified path does not exist: " << nextArgument << std::endl;
                     return false;
                 }

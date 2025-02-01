@@ -10,6 +10,10 @@ namespace Util {
     // Checks if a file exists at the given file path
     bool doesFileExist(const std::string &filepath);
 
+    std::string trim(const std::string &s);
+
+    bool isValidMp4Filename(std::string filename);
+
     // Checks and logs CUDA error codes
     void checkCudaErrorCode(cudaError_t code);
 

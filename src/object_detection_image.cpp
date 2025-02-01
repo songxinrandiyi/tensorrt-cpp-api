@@ -7,9 +7,10 @@ int main(int argc, char *argv[]) {
     std::string onnxModelPath;
     std::string trtModelPath;
     std::string inputImage;
+    std::string outputFileName;
 
     // Parse the command line arguments
-    if (!parseArguments(argc, argv, config, onnxModelPath, trtModelPath, inputImage, false)) {
+    if (!parseArguments(argc, argv, config, onnxModelPath, trtModelPath, inputImage, outputFileName, false)) {
         return -1;
     }
 
