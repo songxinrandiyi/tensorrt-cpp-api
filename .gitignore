@@ -32,9 +32,6 @@
 *.out
 *.app
 
-*.avi
-*.mp4
-
 build*/
 cmake-build-*
 .idea/

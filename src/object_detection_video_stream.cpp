@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
             throw std::runtime_error("Unable to read first frame.");
         }
 
-        int codec = cv::VideoWriter::fourcc('X', 'V', 'I', 'D');  // Define codec
+        int codec = cv::VideoWriter::fourcc('H', '2', '6', '4');
         double fps = cap.get(cv::CAP_PROP_FPS);
         cv::Size frameSize(firstFrame.cols, firstFrame.rows);
 
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
 
         for (auto &tracker : trackers) {
             cv::Rect2f predictedBox = tracker.predict();
-            drawObjects(img, predictedBox, tracker.getID(), tracker.getLabel(), 2);
+            drawObjects(img, predictedBox, tracker.getID(), tracker.getLabel(), 1);
         }
 
         // Save frame to video if outputFileName is not empty

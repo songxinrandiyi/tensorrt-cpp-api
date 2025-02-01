@@ -18,6 +18,9 @@ endif()
 # Use the correct version of CUDA
 set(CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda)
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GLIB REQUIRED glib-2.0)
+
 # We require CUDA, OpenCV, and TensorRT
 find_package(TensorRT REQUIRED)
 find_package(CUDA REQUIRED)
@@ -43,7 +46,8 @@ target_include_directories(Tracking PUBLIC ${OpenCV_INCLUDE_DIRS} include)
 target_link_libraries(Tracking PUBLIC ${OpenCV_LIBS})
 
 add_executable(detect_object_video src/object_detection_video_stream.cpp)
-target_link_libraries(detect_object_video YoloV8_TRT Tracking)
+target_include_directories(detect_object_video PRIVATE ${GLIB_INCLUDE_DIRS})
+target_link_libraries(detect_object_video YoloV8_TRT Tracking ${GLIB_LIBRARIES})
 
 # Enable testing
 enable_testing()
